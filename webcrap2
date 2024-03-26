@@ -1,0 +1,64 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
+import csv
+
+import csv
+from datetime import datetime
+
+
+def get_forex_pairs_for_all_pages():
+    base_url = "https://fx.minkabu.jp/pair?page={}"
+    options = Options()
+    options.add_argument('--headless')
+
+    webdriver_service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=webdriver_service, options=options)
+
+    all_pairs_data = []  # 存储所有页面的数据
+
+    for page in range(1, 5):  # 遍历4个页面
+        print(f"正在处理页面: {page}")
+        driver.get(base_url.format(page))
+
+        try:
+            table_element = WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'table.tbl.fs-s.fnums'))
+            )
+            rows = table_element.find_elements(By.TAG_NAME, 'tr')
+            for row in rows[1:]:  # 跳过标题行
+                cols = row.find_elements(By.TAG_NAME, 'td')  # 获取每一行的所有列
+                if cols:  # 确保行中有数据
+                    row_data = [col.text for col in cols]
+                    all_pairs_data.append(row_data)
+                    print(row_data)
+        except Exception as e:
+            print("发生错误:", e)
+
+    driver.quit()
+    
+    return all_pairs_data
+
+pairs_data = get_forex_pairs_for_all_pages()
+
+default_path = "C:/Users/luoho/OneDrive/文档/exchange_rate/"
+
+def save_to_csv(data, path):
+    today = datetime.now().strftime("%Y-%m-%d")  
+    filename = f"forex_pairs_{today}.csv"  
+    full_path = path + filename  
+    headers = ["通貨ペア", "売値(Bid)", "買値(Ask)", "高値(High)", "安値(Low)", "始値比"]
+
+    with open(full_path, 'w', newline='', encoding='utf-16') as file:
+        writer = csv.writer(file)
+        writer.writerow(headers)
+        writer.writerows(data)
+
+    print(f"数据已保存到 {full_path}")
+
+save_to_csv(pairs_data, default_path)
+
