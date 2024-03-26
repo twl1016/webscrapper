@@ -1,0 +1,26 @@
+import csv
+from datetime import datetime
+import os
+
+def save_to_csv(data, path):
+    now = datetime.now().strftime("%Y-%m-%d_%H-%M")  # 获取当前日期和时间
+    filename = f"forex_pairs_{now}.csv"  # 创建文件名，包括日期和时间
+    full_path = os.path.join(path, filename)  # 指定文件完整路径
+    headers = ["通貨ペア", "売値(Bid)", "買値(Ask)", "高値(High)", "安値(Low)", "始値比"]
+
+    # 创建目录（如果不存在）
+    os.makedirs(path, exist_ok=True)
+
+    with open(full_path, 'w', newline='', encoding='utf-16') as file:
+        writer = csv.writer(file)
+        writer.writerow(headers)
+        writer.writerows(data)
+
+    print(f"数据已保存到 {full_path}")
+
+# 调用示例
+custom_path = "custom/path/to/save/"
+pairs_data = [["EUR/USD", 1.1234, 1.1245, 1.1256, 1.1223, 1.123],
+              ["USD/JPY", 108.45, 108.5, 108.6, 108.4, 108.48]]
+
+save_to_csv(pairs_data, custom_path)
