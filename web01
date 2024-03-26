@@ -1,0 +1,50 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
+import csv
+
+def get_forex_pairs_for_all_pages():
+    base_url = "https://fx.minkabu.jp/pair?page={}"
+    options = Options()
+    options.add_argument('--headless')
+
+    webdriver_service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=webdriver_service, options=options)
+
+    all_pairs_data = []  # 存储所有页面的数据
+
+    for page in range(1, 5):  # 遍历4个页面
+        print(f"正在处理页面: {page}")
+        driver.get(base_url.format(page))
+
+        try:
+            table_element = WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'table.tbl.fs-s.fnums'))
+            )
+            rows = table_element.find_elements(By.TAG_NAME, 'tr')
+            for row in rows[1:]:  # 跳过标题行
+                cols = row.find_elements(By.TAG_NAME, 'td')  # 获取每一行的所有列
+                if cols:  # 确保行中有数据
+                    row_data = [col.text for col in cols]
+                    all_pairs_data.append(row_data)
+                    print(row_data)
+        except Exception as e:
+            print("发生错误:", e)
+
+    driver.quit()
+    
+    return all_pairs_data
+
+def save_to_csv(data, filename="forex_pairs_all_pages.csv"):
+    headers = ["货币对", "卖价(Bid)", "买价(Ask)", "高价(High)", "低价(Low)", "开盘比(Open)"]
+    with open(filename, 'w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerow(headers)
+        writer.writerows(data)
+
+pairs_data = get_forex_pairs_for_all_pages()
+#save_to_csv(pairs_data)
